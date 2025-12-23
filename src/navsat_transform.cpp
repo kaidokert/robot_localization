@@ -145,10 +145,8 @@ NavSatTransform::NavSatTransform(const rclcpp::NodeOptions & options)
       broadcast_cartesian_transform_as_parent_frame_);
   }
 
-  if (!this->get_clock()->started()) {
-    RCLCPP_INFO(this->get_logger(), "Waiting for clock to start...");
-    this->get_clock()->wait_until_started();
-  }
+  // PATCH: Removed wait_until_started() to fix deadlock with use_sim_time
+  // The executor must be spinning before clock messages can be received.
 
   parameters_callback_handle_ = this->add_on_set_parameters_callback(
     std::bind(&NavSatTransform::parametersCallback, this, std::placeholders::_1));

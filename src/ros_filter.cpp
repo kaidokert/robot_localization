@@ -2077,10 +2077,9 @@ void RosFilter<T>::poseCallback(
 template<typename T>
 void RosFilter<T>::initialize()
 {
-  if (!this->get_clock()->started()) {
-    RCLCPP_INFO(get_logger(), "Waiting for clock to start...");
-    this->get_clock()->wait_until_started();
-  }
+  // PATCH: Removed wait_until_started() to fix deadlock with use_sim_time
+  // The executor must be spinning before clock messages can be received.
+  // Node will receive clock messages once rclcpp::spin() starts.
 
   angular_acceleration_.setZero();
   angular_acceleration_cov_.setIdentity();
