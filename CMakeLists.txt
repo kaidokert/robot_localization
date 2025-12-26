@@ -312,6 +312,21 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   )
 
+  #### SIM TIME STARTUP TEST ####
+  # Regression test for wait_until_started() deadlock with use_sim_time
+  ament_add_test(test_ekf_startup_with_sim_time
+    GENERATE_RESULT_FOR_RETURN_CODE_ZERO
+    TIMEOUT 30
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/test/test_ekf_startup_with_sim_time.launch.py"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+
+  # C++ unit test that verifies initialize() doesn't block
+  ament_add_gtest(test_ekf_initialization_timeout test/test_ekf_initialization_timeout.cpp)
+  target_link_libraries(test_ekf_initialization_timeout ${library_name})
+  rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+  target_link_libraries(test_ekf_initialization_timeout "${cpp_typesupport_target}")
+
   ament_cppcheck(LANGUAGE "c++")
   ament_cpplint()
   ament_lint_cmake()
@@ -323,6 +338,7 @@ if(BUILD_TESTING)
     test_filter_base_diagnostics_timestamps
     test_ekf
     test_ekf_node_interfaces
+    test_ekf_initialization_timeout
     test_ukf
     test_ukf_node_interfaces
     #test_ekf_localization_node_bag1
