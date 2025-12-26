@@ -20,10 +20,25 @@
 #include "robot_localization/ros_filter_types.hpp"
 #include "robot_localization/navsat_transform.hpp"
 
-TEST(EkfInitializationTest, DoesNotBlockWithSimTime)
+// Test fixture to manage rclcpp lifecycle
+// rclcpp doesn't support re-initialization in the same process,
+// so we initialize once for all tests in this file
+class RclcppInitializationTest : public ::testing::Test
 {
-  rclcpp::init(0, nullptr);
+public:
+  static void SetUpTestSuite()
+  {
+    rclcpp::init(0, nullptr);
+  }
 
+  static void TearDownTestSuite()
+  {
+    rclcpp::shutdown();
+  }
+};
+
+TEST_F(RclcppInitializationTest, EkfDoesNotBlockWithSimTime)
+{
   // Configure node with use_sim_time:=true (deadlock trigger)
   rclcpp::NodeOptions options;
   options.arguments({"ekf_filter_node", "--ros-args", "-p", "use_sim_time:=true"});
@@ -52,21 +67,17 @@ TEST(EkfInitializationTest, DoesNotBlockWithSimTime)
   if (status == std::future_status::timeout) {
     // Initialization is blocked - this is the deadlock!
     init_thread.detach();  // Can't join - it's stuck
-    rclcpp::shutdown();
     FAIL() << "EKF initialize() blocked for >5 seconds with use_sim_time:=true. "
            << "This indicates the wait_until_started() deadlock bug.";
   } else {
     // Initialization completed
     EXPECT_TRUE(result.get()) << "Initialization failed with exception";
     init_thread.join();
-    rclcpp::shutdown();
   }
 }
 
-TEST(NavSatInitializationTest, DoesNotBlockWithSimTime)
+TEST_F(RclcppInitializationTest, NavSatDoesNotBlockWithSimTime)
 {
-  rclcpp::init(0, nullptr);
-
   // Configure node with use_sim_time:=true (deadlock trigger)
   rclcpp::NodeOptions options;
   options.arguments({"navsat_transform_node", "--ros-args", "-p", "use_sim_time:=true"});
@@ -94,14 +105,12 @@ TEST(NavSatInitializationTest, DoesNotBlockWithSimTime)
   if (status == std::future_status::timeout) {
     // Initialization is blocked - this is the deadlock!
     init_thread.detach();  // Can't join - it's stuck
-    rclcpp::shutdown();
     FAIL() << "NavSatTransform constructor blocked for >5 seconds with use_sim_time:=true. "
            << "This indicates the wait_until_started() deadlock bug.";
   } else {
     // Initialization completed
     EXPECT_TRUE(result.get()) << "Initialization failed with exception";
     init_thread.join();
-    rclcpp::shutdown();
   }
 }
 
