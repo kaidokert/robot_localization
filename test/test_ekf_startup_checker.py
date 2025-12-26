@@ -43,6 +43,7 @@ def main():
     while not checker.received and (time.time() - start_time) < timeout:
         rclpy.spin_once(checker, timeout_sec=0.1)
 
+    checker.destroy_node()
     rclpy.shutdown()
 
     if checker.received:
